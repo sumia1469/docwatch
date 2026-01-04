@@ -9071,17 +9071,119 @@ body.resizing-bottom-panel * {
    ============================================ */
 
 .folder-groups-container {
-    /* 그룹이 없을 때 border 제거 */
+    flex: 1;
+    overflow-y: auto;
 }
 
 .folder-groups-container:empty::after {
-    content: '그룹을 만들어 폴더를 정리하세요';
+    content: '+ 버튼을 눌러 새 그룹을 만드세요';
     display: block;
-    padding: 12px;
+    padding: 24px 12px;
     color: var(--text-muted);
-    font-size: 11px;
+    font-size: 12px;
     text-align: center;
     font-style: italic;
+}
+
+/* 전체 높이 섹션 (폴더 그룹 통합용) */
+.vscode-section-full {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.vscode-section-full .vscode-section-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.vscode-section-full .vscode-section-header {
+    cursor: default;
+}
+
+.vscode-section-full .section-actions {
+    opacity: 1;
+}
+
+/* ============================================
+   VSCode 스타일 컨텍스트 메뉴
+   ============================================ */
+
+.context-menu {
+    position: fixed;
+    background: var(--bg-secondary, #252526);
+    border: 1px solid var(--border-color, #454545);
+    border-radius: 6px;
+    padding: 4px 0;
+    min-width: 180px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    z-index: 100000;
+    font-size: 12px;
+    animation: contextMenuFadeIn 0.1s ease;
+}
+
+@keyframes contextMenuFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: var(--text-primary, #ccc);
+    transition: background 0.1s ease;
+}
+
+.context-menu-item:hover {
+    background: var(--bg-hover, #094771);
+}
+
+.context-menu-item svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    opacity: 0.8;
+}
+
+.context-menu-item span {
+    flex: 1;
+}
+
+.context-menu-shortcut {
+    font-size: 11px;
+    color: var(--text-muted, #888);
+    margin-left: auto;
+    flex: none;
+}
+
+.context-menu-separator {
+    height: 1px;
+    background: var(--border-color, #3c3c3c);
+    margin: 4px 0;
+}
+
+.context-menu-item-danger {
+    color: var(--danger, #f14c4c);
+}
+
+.context-menu-item-danger:hover {
+    background: rgba(241, 76, 76, 0.2);
+}
+
+.context-menu-item-danger svg {
+    fill: var(--danger, #f14c4c);
 }
 
 .folder-group {

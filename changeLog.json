@@ -1,5 +1,37 @@
 [
   {
+    "timestamp": "2026-01-03T13:23:04.109Z",
+    "folder": "/Users/ibyeonghyeon/Downloads",
+    "file": "12월 28일 1021 회의.txt",
+    "action": "수정",
+    "fullPath": "/Users/ibyeonghyeon/Downloads/12월 28일 1021 회의.txt",
+    "extension": ".txt",
+    "isFile": true,
+    "changeSummary": {
+      "type": "modified",
+      "summary": "내용 변경됨 (+1항목, -1항목)",
+      "details": {
+        "lengthDiff": 5,
+        "prevLength": 1275,
+        "currLength": 1280,
+        "added": [
+          "요약ㅁㄴㅁㅇㅁ"
+        ],
+        "removed": [
+          "요약"
+        ],
+        "addedCount": 1,
+        "removedCount": 1,
+        "fileTypeInfo": {
+          "type": "text",
+          "prevLines": 57,
+          "currLines": 57,
+          "lineDiff": 0
+        }
+      }
+    }
+  },
+  {
     "timestamp": "2025-12-31T04:08:48.907Z",
     "folder": "Z:\\2차사업\\100.타란",
     "file": "공동공유화면개발_WBS_20251124.xlsx",

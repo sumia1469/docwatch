@@ -297,25 +297,36 @@ function updateSidebar(section) {
     }
 }
 
-// 모니터링 사이드바 (VSCode Explorer 스타일 - 기능별 섹션 분리)
+// 모니터링 사이드바 (VSCode Explorer 스타일 - 폴더 그룹 통합)
 function renderMonitorSidebar(container) {
     container.innerHTML = `
         <!-- VSCode 스타일 Explorer 섹션 -->
         <div class="vscode-explorer">
-            <!-- 섹션 1: 폴더 그룹 -->
-            <div class="vscode-section">
-                <div class="vscode-section-header" onclick="toggleExplorerSection('folderGroups')">
-                    <svg class="section-chevron" id="folderGroupsChevron" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M5.7 13.7L5 13l4.6-4.6L5 3.7l.7-.7 5.3 5.4-5.3 5.3z"/>
-                    </svg>
-                    <span class="section-title">폴더 그룹</span>
+            <!-- 폴더 그룹 (통합 관리) -->
+            <div class="vscode-section vscode-section-full">
+                <div class="vscode-section-header">
+                    <span class="section-title">감시 폴더</span>
                     <div class="section-actions">
-                        <!-- 새 그룹 생성 (폴더 + 플러스 배지) -->
+                        <!-- 새 그룹 생성 -->
                         <button class="vscode-action-btn" onclick="event.stopPropagation(); createFolderGroup()" title="새 그룹 만들기">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1">
                                 <path d="M1.5 3.5h4l1 1.5h7a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-8.5a1 1 0 0 1 1-1z"/>
                                 <circle cx="12" cy="12" r="3.5" fill="var(--bg-primary, #1e1e1e)" stroke="currentColor"/>
                                 <path d="M12 10v4M10 12h4" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                        <!-- 새로고침 -->
+                        <button class="vscode-action-btn" onclick="event.stopPropagation(); loadFolderGroups()" title="새로고침">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2">
+                                <path d="M13.5 8a5.5 5.5 0 1 1-1.5-3.8" stroke-linecap="round"/>
+                                <path d="M13.5 2v4h-4" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <!-- 모두 축소 -->
+                        <button class="vscode-action-btn" onclick="event.stopPropagation(); collapseAllFolders()" title="모두 축소">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1">
+                                <rect x="1.5" y="4.5" width="9" height="7" rx="0.5"/>
+                                <path d="M5.5 4.5v-2a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-2"/>
                             </svg>
                         </button>
                     </div>
@@ -327,61 +338,27 @@ function renderMonitorSidebar(container) {
                     </div>
                 </div>
             </div>
-
-            <!-- 섹션 2: 감시 항목 -->
-            <div class="vscode-section">
-                <div class="vscode-section-header" onclick="toggleExplorerSection('watchedItems')">
-                    <svg class="section-chevron" id="watchedItemsChevron" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M5.7 13.7L5 13l4.6-4.6L5 3.7l.7-.7 5.3 5.4-5.3 5.3z"/>
-                    </svg>
-                    <span class="section-title">감시 항목</span>
-                    <div class="section-actions">
-                        <!-- 파일 추가 (문서 + 플러스 배지) -->
-                        <button class="vscode-action-btn" onclick="event.stopPropagation(); openFileDialog()" title="파일 추가">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1">
-                                <path d="M3 1.5h6l3.5 3.5v10a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-12.5a1 1 0 0 1 1-1z"/>
-                                <path d="M9 1.5v3.5h3.5"/>
-                                <circle cx="12" cy="12" r="3.5" fill="var(--bg-primary, #1e1e1e)" stroke="currentColor"/>
-                                <path d="M12 10v4M10 12h4" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                        <!-- 폴더 추가 (폴더 + 플러스 배지) -->
-                        <button class="vscode-action-btn" onclick="event.stopPropagation(); openFolderDialog()" title="폴더 추가">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1">
-                                <path d="M1.5 3.5h4l1 1.5h7a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-8.5a1 1 0 0 1 1-1z"/>
-                                <circle cx="12" cy="12" r="3.5" fill="var(--bg-primary, #1e1e1e)" stroke="currentColor"/>
-                                <path d="M12 10v4M10 12h4" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                        <!-- 새로고침 (회전 화살표) -->
-                        <button class="vscode-action-btn" onclick="event.stopPropagation(); loadSidebarFolders()" title="새로고침">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2">
-                                <path d="M13.5 8a5.5 5.5 0 1 1-1.5-3.8" stroke-linecap="round"/>
-                                <path d="M13.5 2v4h-4" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                        <!-- 모두 축소 (사각형 겹침) -->
-                        <button class="vscode-action-btn" onclick="event.stopPropagation(); collapseAllFolders()" title="모두 축소">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1">
-                                <rect x="1.5" y="4.5" width="9" height="7" rx="0.5"/>
-                                <path d="M5.5 4.5v-2a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-2"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="vscode-section-content" id="watchedItemsContent">
-                    <!-- 트리 뷰 영역 (감시 폴더/파일) -->
-                    <div class="tree-view" id="sidebarFolderList">
-                        <div style="padding: 12px; color: var(--text-muted); font-size: 12px; text-align: center;">
-                            로딩 중...
-                        </div>
-                    </div>
-                </div>
+        </div>
+        <!-- 하단 상태바: 선택한 항목 경로 표시 -->
+        <div class="path-status-bar" id="pathStatusBar">
+            <div class="path-status-icon">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 4a.5.5 0 0 1 .5.5V6H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V7H6a.5.5 0 0 1 0-1h1.5V4.5A.5.5 0 0 1 8 4z"/>
+                    <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2z"/>
+                </svg>
             </div>
+            <div class="path-status-content">
+                <span class="path-status-text">항목을 선택하세요</span>
+            </div>
+            <button class="path-status-copy" id="pathStatusCopy" title="경로 복사" style="display: none;">
+                <svg viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2z"/>
+                    <path d="M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/>
+                </svg>
+            </button>
         </div>
     `;
     loadFolderGroups();
-    loadSidebarFolders();
 }
 
 // Explorer 섹션 토글
@@ -512,14 +489,14 @@ function loadFolderGroups() {
 
     container.innerHTML = groups.map((group, index) => `
         <div class="folder-group" data-group-id="${group.id}">
-            <div class="folder-group-header" onclick="toggleFolderGroup('${group.id}')">
+            <div class="folder-group-header" onclick="toggleFolderGroup('${group.id}')" oncontextmenu="showGroupContextMenu(event, '${group.id}')">
                 <svg class="folder-group-chevron ${group.expanded ? 'expanded' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 18l6-6-6-6"/>
                 </svg>
                 <svg class="folder-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
                 </svg>
-                <span class="folder-group-name" ondblclick="renameFolderGroup(event, '${group.id}')">${escapeHtml(group.name)}</span>
+                <span class="folder-group-name">${escapeHtml(group.name)}</span>
                 <span class="folder-group-count">${group.paths.length}</span>
                 <div class="folder-group-actions">
                     <button class="folder-group-action-btn" onclick="event.stopPropagation(); addToFolderGroup('${group.id}')" title="폴더/파일 추가">
@@ -539,10 +516,19 @@ function loadFolderGroups() {
             <div class="folder-group-content ${group.expanded ? 'expanded' : ''}">
                 ${group.paths.length === 0 ?
                     '<div class="folder-group-empty">폴더 또는 파일을 추가하세요</div>' :
-                    group.paths.map(path => `
-                        <div class="folder-group-item" onclick="selectGroupItem('${escapeHtml(path)}')" title="${escapeHtml(path)}">
+                    group.paths.map(path => {
+                        const escapedPath = escapeHtml(path).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                        const isFile = path.includes('.') && !path.endsWith('/');
+                        return `
+                        <div class="folder-group-item"
+                             data-path="${escapeHtml(path)}"
+                             data-type="${isFile ? 'file' : 'folder'}"
+                             onclick="selectGroupItem(this, '${escapedPath}')"
+                             oncontextmenu="showItemContextMenu(event, '${group.id}', '${escapedPath}')"
+                             onmouseenter="showItemTooltip(event, '${escapedPath}')"
+                             onmouseleave="hideItemTooltip()">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                ${path.includes('.') && !path.endsWith('/') ?
+                                ${isFile ?
                                     '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>' :
                                     '<path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>'
                                 }
@@ -555,7 +541,7 @@ function loadFolderGroups() {
                                 </svg>
                             </button>
                         </div>
-                    `).join('')
+                    `}).join('')
                 }
             </div>
         </div>
@@ -584,21 +570,130 @@ function saveFolderGroups(groups) {
 
 // 새 폴더 그룹 생성
 function createFolderGroup() {
-    const name = prompt('새 폴더 그룹 이름을 입력하세요:', '새 그룹');
-    if (!name || !name.trim()) return;
+    showInputModal('새 폴더 그룹', '그룹 이름을 입력하세요:', '새 그룹', (name) => {
+        if (!name || !name.trim()) return;
 
-    const groups = getFolderGroups();
-    const newGroup = {
-        id: 'group_' + Date.now(),
-        name: name.trim(),
-        paths: [],
-        expanded: true,
-        createdAt: new Date().toISOString()
+        const groups = getFolderGroups();
+        const newGroup = {
+            id: 'group_' + Date.now(),
+            name: name.trim(),
+            paths: [],
+            expanded: true,
+            createdAt: new Date().toISOString()
+        };
+
+        groups.push(newGroup);
+        saveFolderGroups(groups);
+        loadFolderGroups();
+    });
+}
+
+// 커스텀 입력 모달 표시 (Electron 환경에서 prompt 대체)
+function showInputModal(title, message, defaultValue, callback) {
+    // 기존 모달 제거
+    const existingModal = document.getElementById('customInputModal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'customInputModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100000;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: var(--bg-secondary, #252526);
+            border: 1px solid var(--border-color, #3c3c3c);
+            border-radius: 8px;
+            padding: 20px;
+            min-width: 300px;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        ">
+            <h3 style="margin: 0 0 12px 0; font-size: 14px; color: var(--text-primary, #fff);">${escapeHtml(title)}</h3>
+            <p style="margin: 0 0 12px 0; font-size: 12px; color: var(--text-secondary, #ccc);">${escapeHtml(message)}</p>
+            <input type="text" id="customInputField" value="${escapeHtml(defaultValue)}" style="
+                width: 100%;
+                padding: 8px 12px;
+                border: 1px solid var(--border-color, #3c3c3c);
+                border-radius: 4px;
+                background: var(--bg-primary, #1e1e1e);
+                color: var(--text-primary, #fff);
+                font-size: 13px;
+                outline: none;
+                box-sizing: border-box;
+            " />
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+                <button id="customInputCancel" style="
+                    padding: 6px 14px;
+                    border: 1px solid var(--border-color, #3c3c3c);
+                    border-radius: 4px;
+                    background: transparent;
+                    color: var(--text-primary, #fff);
+                    cursor: pointer;
+                    font-size: 12px;
+                ">취소</button>
+                <button id="customInputConfirm" style="
+                    padding: 6px 14px;
+                    border: none;
+                    border-radius: 4px;
+                    background: var(--primary, #10b981);
+                    color: white;
+                    cursor: pointer;
+                    font-size: 12px;
+                ">확인</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const inputField = document.getElementById('customInputField');
+    const confirmBtn = document.getElementById('customInputConfirm');
+    const cancelBtn = document.getElementById('customInputCancel');
+
+    // 입력 필드에 포커스
+    setTimeout(() => {
+        inputField.focus();
+        inputField.select();
+    }, 100);
+
+    // 확인 버튼
+    confirmBtn.onclick = () => {
+        const value = inputField.value;
+        modal.remove();
+        callback(value);
     };
 
-    groups.push(newGroup);
-    saveFolderGroups(groups);
-    loadFolderGroups();
+    // 취소 버튼
+    cancelBtn.onclick = () => {
+        modal.remove();
+    };
+
+    // Enter 키로 확인
+    inputField.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+            confirmBtn.click();
+        } else if (e.key === 'Escape') {
+            cancelBtn.click();
+        }
+    };
+
+    // 배경 클릭 시 닫기
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            cancelBtn.click();
+        }
+    };
 }
 
 // 폴더 그룹 펼침/접힘 토글
@@ -619,22 +714,110 @@ function renameFolderGroup(event, groupId) {
     const group = groups.find(g => g.id === groupId);
     if (!group) return;
 
-    const newName = prompt('그룹 이름 변경:', group.name);
-    if (newName && newName.trim() && newName.trim() !== group.name) {
-        group.name = newName.trim();
-        saveFolderGroups(groups);
-        loadFolderGroups();
-    }
+    showInputModal('그룹 이름 변경', '새 이름을 입력하세요:', group.name, (newName) => {
+        if (newName && newName.trim() && newName.trim() !== group.name) {
+            group.name = newName.trim();
+            saveFolderGroups(groups);
+            loadFolderGroups();
+        }
+    });
 }
 
 // 폴더 그룹 삭제
 function deleteFolderGroup(groupId) {
-    if (!confirm('이 폴더 그룹을 삭제하시겠습니까?\n(포함된 폴더/파일은 감시 목록에서 제거되지 않습니다)')) return;
+    showConfirmModal('그룹 삭제', '이 폴더 그룹을 삭제하시겠습니까?\n(포함된 폴더/파일은 감시 목록에서 제거되지 않습니다)', () => {
+        const groups = getFolderGroups();
+        const newGroups = groups.filter(g => g.id !== groupId);
+        saveFolderGroups(newGroups);
+        loadFolderGroups();
+    });
+}
 
-    const groups = getFolderGroups();
-    const newGroups = groups.filter(g => g.id !== groupId);
-    saveFolderGroups(newGroups);
-    loadFolderGroups();
+// 커스텀 확인 모달 표시 (Electron 환경에서 confirm 대체)
+function showConfirmModal(title, message, onConfirm) {
+    // 기존 모달 제거
+    const existingModal = document.getElementById('customConfirmModal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'customConfirmModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100000;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: var(--bg-secondary, #252526);
+            border: 1px solid var(--border-color, #3c3c3c);
+            border-radius: 8px;
+            padding: 20px;
+            min-width: 300px;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        ">
+            <h3 style="margin: 0 0 12px 0; font-size: 14px; color: var(--text-primary, #fff);">${escapeHtml(title)}</h3>
+            <p style="margin: 0 0 16px 0; font-size: 12px; color: var(--text-secondary, #ccc); white-space: pre-wrap;">${escapeHtml(message)}</p>
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button id="customConfirmCancel" style="
+                    padding: 6px 14px;
+                    border: 1px solid var(--border-color, #3c3c3c);
+                    border-radius: 4px;
+                    background: transparent;
+                    color: var(--text-primary, #fff);
+                    cursor: pointer;
+                    font-size: 12px;
+                ">취소</button>
+                <button id="customConfirmOk" style="
+                    padding: 6px 14px;
+                    border: none;
+                    border-radius: 4px;
+                    background: var(--danger, #ef4444);
+                    color: white;
+                    cursor: pointer;
+                    font-size: 12px;
+                ">삭제</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const confirmBtn = document.getElementById('customConfirmOk');
+    const cancelBtn = document.getElementById('customConfirmCancel');
+
+    confirmBtn.onclick = () => {
+        modal.remove();
+        onConfirm();
+    };
+
+    cancelBtn.onclick = () => {
+        modal.remove();
+    };
+
+    // 배경 클릭 시 닫기
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            cancelBtn.click();
+        }
+    };
+
+    // ESC 키로 닫기
+    const keyHandler = (e) => {
+        if (e.key === 'Escape') {
+            cancelBtn.click();
+            document.removeEventListener('keydown', keyHandler);
+        }
+    };
+    document.addEventListener('keydown', keyHandler);
 }
 
 // 폴더 그룹에 폴더/파일 추가
@@ -644,39 +827,163 @@ async function addToFolderGroup(groupId) {
 
         // Electron 환경에서 파일/폴더 선택
         if (window.electronAPI) {
-            const choice = confirm('폴더를 추가하시겠습니까?\n(취소를 누르면 파일 선택)');
-            if (choice && window.electronAPI.selectFolder) {
-                path = await window.electronAPI.selectFolder();
-            } else if (window.electronAPI.selectFile) {
-                path = await window.electronAPI.selectFile();
-            }
+            // 선택 모달 표시
+            showChoiceModal('항목 추가', '어떤 항목을 추가하시겠습니까?',
+                { label: '폴더', value: 'folder' },
+                { label: '파일', value: 'file' },
+                async (choice) => {
+                    if (choice === 'folder' && window.electronAPI.selectFolder) {
+                        path = await window.electronAPI.selectFolder();
+                    } else if (choice === 'file' && window.electronAPI.selectFile) {
+                        path = await window.electronAPI.selectFile();
+                    }
+                    if (path) {
+                        await finishAddToFolderGroup(groupId, path);
+                    }
+                }
+            );
+            return; // 비동기 처리로 이동
         } else {
             // 웹 환경
-            path = prompt('추가할 폴더/파일 경로를 입력하세요:');
-        }
-
-        if (!path || !path.trim()) return;
-
-        const groups = getFolderGroups();
-        const group = groups.find(g => g.id === groupId);
-        if (!group) return;
-
-        // 중복 확인
-        if (group.paths.includes(path)) {
-            alert('이미 그룹에 포함된 경로입니다.');
+            showInputModal('항목 추가', '추가할 폴더/파일 경로를 입력하세요:', '', async (inputPath) => {
+                if (inputPath && inputPath.trim()) {
+                    await finishAddToFolderGroup(groupId, inputPath.trim());
+                }
+            });
             return;
         }
-
-        group.paths.push(path);
-        saveFolderGroups(groups);
-        loadFolderGroups();
-
-        // 감시 목록에도 추가
-        await addFolderByPath(path);
     } catch (err) {
         console.error('그룹에 추가 실패:', err);
-        alert('추가에 실패했습니다.');
+        showToast('추가에 실패했습니다.', 'error');
     }
+}
+
+// 폴더 그룹에 항목 추가 완료 처리
+async function finishAddToFolderGroup(groupId, path) {
+    const groups = getFolderGroups();
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return;
+
+    // 중복 확인
+    if (group.paths.includes(path)) {
+        showToast('이미 그룹에 포함된 경로입니다.', 'error');
+        return;
+    }
+
+    group.paths.push(path);
+    saveFolderGroups(groups);
+    loadFolderGroups();
+
+    // 감시 목록에도 추가
+    await addFolderByPath(path);
+    showToast('항목이 추가되었습니다.', 'success');
+}
+
+// 커스텀 선택 모달 표시 (폴더/파일 선택용)
+function showChoiceModal(title, message, option1, option2, callback) {
+    const existingModal = document.getElementById('customChoiceModal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'customChoiceModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100000;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: var(--bg-secondary, #252526);
+            border: 1px solid var(--border-color, #3c3c3c);
+            border-radius: 8px;
+            padding: 20px;
+            min-width: 280px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        ">
+            <h3 style="margin: 0 0 12px 0; font-size: 14px; color: var(--text-primary, #fff);">${escapeHtml(title)}</h3>
+            <p style="margin: 0 0 16px 0; font-size: 12px; color: var(--text-secondary, #ccc);">${escapeHtml(message)}</p>
+            <div style="display: flex; gap: 8px;">
+                <button id="choiceOption1" style="
+                    flex: 1;
+                    padding: 10px 14px;
+                    border: 1px solid var(--border-color, #3c3c3c);
+                    border-radius: 4px;
+                    background: var(--bg-primary, #1e1e1e);
+                    color: var(--text-primary, #fff);
+                    cursor: pointer;
+                    font-size: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 6px;
+                ">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+                    </svg>
+                    ${escapeHtml(option1.label)}
+                </button>
+                <button id="choiceOption2" style="
+                    flex: 1;
+                    padding: 10px 14px;
+                    border: 1px solid var(--border-color, #3c3c3c);
+                    border-radius: 4px;
+                    background: var(--bg-primary, #1e1e1e);
+                    color: var(--text-primary, #fff);
+                    cursor: pointer;
+                    font-size: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 6px;
+                ">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <path d="M14 2v6h6"/>
+                    </svg>
+                    ${escapeHtml(option2.label)}
+                </button>
+            </div>
+            <button id="choiceCancel" style="
+                width: 100%;
+                margin-top: 8px;
+                padding: 8px;
+                border: none;
+                border-radius: 4px;
+                background: transparent;
+                color: var(--text-muted, #888);
+                cursor: pointer;
+                font-size: 11px;
+            ">취소</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('choiceOption1').onclick = () => {
+        modal.remove();
+        callback(option1.value);
+    };
+
+    document.getElementById('choiceOption2').onclick = () => {
+        modal.remove();
+        callback(option2.value);
+    };
+
+    document.getElementById('choiceCancel').onclick = () => {
+        modal.remove();
+    };
+
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    };
 }
 
 // 폴더 그룹에서 폴더/파일 제거
@@ -711,6 +1018,271 @@ function getFileName(path) {
     const normalized = path.replace(/\\/g, '/');
     const parts = normalized.split('/').filter(p => p);
     return parts[parts.length - 1] || path;
+}
+
+// ============================================
+// VSCode 스타일 컨텍스트 메뉴
+// ============================================
+
+// 컨텍스트 메뉴 닫기
+function hideContextMenu() {
+    const menu = document.getElementById('contextMenu');
+    if (menu) menu.remove();
+}
+
+// 그룹 컨텍스트 메뉴 표시
+function showGroupContextMenu(event, groupId) {
+    event.preventDefault();
+    event.stopPropagation();
+    hideContextMenu();
+
+    const groups = getFolderGroups();
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return;
+
+    const menu = document.createElement('div');
+    menu.id = 'contextMenu';
+    menu.className = 'context-menu';
+    menu.innerHTML = `
+        <div class="context-menu-item" onclick="hideContextMenu(); addToFolderGroup('${groupId}')">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+            <span>폴더/파일 추가</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="hideContextMenu(); renameFolderGroup(event, '${groupId}')">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/></svg>
+            <span>이름 변경</span>
+            <span class="context-menu-shortcut">F2</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="hideContextMenu(); duplicateFolderGroup('${groupId}')">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6z"/><path d="M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/></svg>
+            <span>그룹 복제</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item context-menu-item-danger" onclick="hideContextMenu(); deleteFolderGroup('${groupId}')">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+            <span>그룹 삭제</span>
+            <span class="context-menu-shortcut">Delete</span>
+        </div>
+    `;
+
+    document.body.appendChild(menu);
+    positionContextMenu(menu, event);
+
+    // 클릭 시 메뉴 닫기
+    document.addEventListener('click', hideContextMenu, { once: true });
+    document.addEventListener('contextmenu', hideContextMenu, { once: true });
+}
+
+// 아이템 컨텍스트 메뉴 표시
+function showItemContextMenu(event, groupId, path) {
+    event.preventDefault();
+    event.stopPropagation();
+    hideContextMenu();
+
+    const fileName = getFileName(path);
+    const isFile = path.includes('.') && !path.endsWith('/');
+
+    const menu = document.createElement('div');
+    menu.id = 'contextMenu';
+    menu.className = 'context-menu';
+    menu.innerHTML = `
+        <div class="context-menu-item" onclick="hideContextMenu(); openInExplorer('${escapeHtml(path).replace(/'/g, "\\'")}')">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/></svg>
+            <span>탐색기에서 열기</span>
+        </div>
+        <div class="context-menu-item" onclick="hideContextMenu(); copyPathToClipboard('${escapeHtml(path).replace(/'/g, "\\'")}')">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6z"/><path d="M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/></svg>
+            <span>경로 복사</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="hideContextMenu(); moveToAnotherGroup('${groupId}', '${escapeHtml(path).replace(/'/g, "\\'")}')">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/></svg>
+            <span>다른 그룹으로 이동</span>
+        </div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item context-menu-item-danger" onclick="hideContextMenu(); removeFromFolderGroup('${groupId}', '${escapeHtml(path).replace(/'/g, "\\'")}')">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+            <span>그룹에서 제거</span>
+        </div>
+    `;
+
+    document.body.appendChild(menu);
+    positionContextMenu(menu, event);
+
+    document.addEventListener('click', hideContextMenu, { once: true });
+    document.addEventListener('contextmenu', hideContextMenu, { once: true });
+}
+
+// 컨텍스트 메뉴 위치 조정
+function positionContextMenu(menu, event) {
+    const menuWidth = 200;
+    const menuHeight = menu.offsetHeight || 200;
+
+    let x = event.clientX;
+    let y = event.clientY;
+
+    // 화면 밖으로 나가지 않도록 조정
+    if (x + menuWidth > window.innerWidth) {
+        x = window.innerWidth - menuWidth - 5;
+    }
+    if (y + menuHeight > window.innerHeight) {
+        y = window.innerHeight - menuHeight - 5;
+    }
+
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+}
+
+// 그룹 복제
+function duplicateFolderGroup(groupId) {
+    const groups = getFolderGroups();
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return;
+
+    const newGroup = {
+        id: 'group_' + Date.now(),
+        name: group.name + ' (복사본)',
+        paths: [...group.paths],
+        expanded: true,
+        createdAt: new Date().toISOString()
+    };
+
+    groups.push(newGroup);
+    saveFolderGroups(groups);
+    loadFolderGroups();
+    showToast('그룹이 복제되었습니다.', 'success');
+}
+
+// 탐색기에서 열기
+function openInExplorer(path) {
+    if (window.electronAPI && window.electronAPI.openInExplorer) {
+        window.electronAPI.openInExplorer(path);
+    } else {
+        showToast('이 기능은 데스크톱 앱에서만 사용할 수 있습니다.', 'error');
+    }
+}
+
+// 경로 클립보드에 복사
+async function copyPathToClipboard(path) {
+    try {
+        await navigator.clipboard.writeText(path);
+        showToast('경로가 복사되었습니다.', 'success');
+    } catch (err) {
+        console.error('클립보드 복사 실패:', err);
+        showToast('복사에 실패했습니다.', 'error');
+    }
+}
+
+// 다른 그룹으로 이동
+function moveToAnotherGroup(currentGroupId, path) {
+    const groups = getFolderGroups();
+    const otherGroups = groups.filter(g => g.id !== currentGroupId);
+
+    if (otherGroups.length === 0) {
+        showToast('이동할 다른 그룹이 없습니다.', 'error');
+        return;
+    }
+
+    // 그룹 선택 모달 표시
+    showGroupSelectModal(otherGroups, (targetGroupId) => {
+        const sourceGroup = groups.find(g => g.id === currentGroupId);
+        const targetGroup = groups.find(g => g.id === targetGroupId);
+
+        if (!sourceGroup || !targetGroup) return;
+
+        // 이동
+        sourceGroup.paths = sourceGroup.paths.filter(p => p !== path);
+        if (!targetGroup.paths.includes(path)) {
+            targetGroup.paths.push(path);
+        }
+
+        saveFolderGroups(groups);
+        loadFolderGroups();
+        showToast(`"${getFileName(path)}"을(를) "${targetGroup.name}"으로 이동했습니다.`, 'success');
+    });
+}
+
+// 그룹 선택 모달
+function showGroupSelectModal(groups, callback) {
+    const existingModal = document.getElementById('groupSelectModal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'groupSelectModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100000;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: var(--bg-secondary, #252526);
+            border: 1px solid var(--border-color, #3c3c3c);
+            border-radius: 8px;
+            padding: 16px;
+            min-width: 250px;
+            max-width: 350px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        ">
+            <h3 style="margin: 0 0 12px 0; font-size: 14px; color: var(--text-primary, #fff);">그룹 선택</h3>
+            <div style="max-height: 200px; overflow-y: auto;">
+                ${groups.map(g => `
+                    <div class="group-select-item" data-group-id="${g.id}" style="
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        padding: 8px 12px;
+                        cursor: pointer;
+                        border-radius: 4px;
+                        margin-bottom: 4px;
+                        transition: background 0.1s;
+                    " onmouseover="this.style.background='var(--bg-hover, #2a2d2e)'" onmouseout="this.style.background='transparent'">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+                        </svg>
+                        <span style="color: var(--text-primary, #fff); font-size: 13px;">${escapeHtml(g.name)}</span>
+                        <span style="color: var(--text-muted, #888); font-size: 11px; margin-left: auto;">(${g.paths.length})</span>
+                    </div>
+                `).join('')}
+            </div>
+            <button onclick="document.getElementById('groupSelectModal').remove()" style="
+                width: 100%;
+                margin-top: 12px;
+                padding: 8px;
+                border: 1px solid var(--border-color, #3c3c3c);
+                border-radius: 4px;
+                background: transparent;
+                color: var(--text-primary, #fff);
+                cursor: pointer;
+                font-size: 12px;
+            ">취소</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // 그룹 클릭 이벤트
+    modal.querySelectorAll('.group-select-item').forEach(item => {
+        item.onclick = () => {
+            const groupId = item.dataset.groupId;
+            modal.remove();
+            callback(groupId);
+        };
+    });
+
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    };
 }
 
 // HTML 이스케이프 (XSS 방지)
