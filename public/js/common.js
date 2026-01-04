@@ -2048,7 +2048,7 @@ function renderMeetingSidebar(container) {
                 <!-- 대기 상태 -->
                 <div class="sidebar-recording-panel" id="sidebarRecordingPanel">
                     <div class="sidebar-recording-ready" id="sidebarRecordingReady">
-                        <div class="sidebar-item" onclick="startRecording()">
+                        <div class="sidebar-item" onclick="showRecordingConfirmModal()">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/>
                                 <circle cx="12" cy="12" r="3" fill="currentColor"/>
@@ -4238,8 +4238,258 @@ const qualitySettings = {
     high: { audioBitsPerSecond: 256000 }
 };
 
+// 선택된 마이크 장치 ID
+let selectedMicDeviceId = null;
+
+// 녹음 확인 모달 표시
+async function showRecordingConfirmModal() {
+    // 이미 모달이 있으면 제거
+    const existingModal = document.getElementById('recordingConfirmModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // 기본 제목 생성
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+    const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const defaultTitle = `${dateStr} ${timeStr} 회의`;
+
+    // 모달 HTML 생성
+    const modalHTML = `
+        <div class="modal-overlay" id="recordingConfirmModal" onclick="closeRecordingConfirmModal(event)">
+            <div class="modal-content recording-confirm-modal" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                        </svg>
+                        녹음 시작
+                    </h3>
+                    <button class="modal-close-btn" onclick="closeRecordingConfirmModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M18 6L6 18M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="recording-confirm-field">
+                        <label for="recordingTitleInput">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                            회의 제목
+                        </label>
+                        <input type="text" id="recordingTitleInput" value="${defaultTitle}" placeholder="회의 제목을 입력하세요">
+                    </div>
+                    <div class="recording-confirm-field">
+                        <label for="microphoneSelect">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                <line x1="12" y1="19" x2="12" y2="23"/>
+                                <line x1="8" y1="23" x2="16" y2="23"/>
+                            </svg>
+                            마이크 선택
+                        </label>
+                        <select id="microphoneSelect">
+                            <option value="">마이크 목록 불러오는 중...</option>
+                        </select>
+                        <div class="mic-test-indicator" id="micTestIndicator">
+                            <div class="mic-level-bar" id="micLevelBar"></div>
+                            <span class="mic-test-label">마이크 테스트</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeRecordingConfirmModal()">취소</button>
+                    <button class="btn-primary" id="startRecordingBtn" onclick="confirmAndStartRecording()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                        </svg>
+                        녹음 시작
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // 마이크 목록 로드
+    await loadMicrophoneDevices();
+
+    // 제목 입력 필드에 포커스
+    setTimeout(() => {
+        const titleInput = document.getElementById('recordingTitleInput');
+        if (titleInput) {
+            titleInput.focus();
+            titleInput.select();
+        }
+    }, 100);
+}
+
+// 마이크 장치 목록 로드
+async function loadMicrophoneDevices() {
+    const select = document.getElementById('microphoneSelect');
+    if (!select) return;
+
+    try {
+        // 먼저 권한 요청 (권한이 있어야 장치 레이블을 볼 수 있음)
+        const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        tempStream.getTracks().forEach(track => track.stop());
+
+        // 장치 목록 가져오기
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter(device => device.kind === 'audioinput');
+
+        select.innerHTML = '';
+
+        if (audioInputs.length === 0) {
+            select.innerHTML = '<option value="">마이크를 찾을 수 없습니다</option>';
+            return;
+        }
+
+        audioInputs.forEach((device, index) => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.textContent = device.label || `마이크 ${index + 1}`;
+            select.appendChild(option);
+        });
+
+        // 기본 선택된 마이크로 테스트 시작
+        if (audioInputs.length > 0) {
+            selectedMicDeviceId = audioInputs[0].deviceId;
+            startMicTest(selectedMicDeviceId);
+        }
+
+        // 마이크 변경 이벤트
+        select.addEventListener('change', (e) => {
+            selectedMicDeviceId = e.target.value;
+            startMicTest(selectedMicDeviceId);
+        });
+
+    } catch (err) {
+        console.error('마이크 목록 로드 실패:', err);
+        select.innerHTML = '<option value="">마이크 권한이 필요합니다</option>';
+        showToast('마이크 권한을 허용해주세요.', 'warning');
+    }
+}
+
+// 마이크 테스트용 스트림
+let micTestStream = null;
+let micTestAnalyser = null;
+let micTestAnimationId = null;
+
+// 마이크 테스트 시작
+async function startMicTest(deviceId) {
+    // 기존 테스트 중지
+    stopMicTest();
+
+    if (!deviceId) return;
+
+    try {
+        micTestStream = await navigator.mediaDevices.getUserMedia({
+            audio: { deviceId: { exact: deviceId } }
+        });
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        micTestAnalyser = audioCtx.createAnalyser();
+        const source = audioCtx.createMediaStreamSource(micTestStream);
+        source.connect(micTestAnalyser);
+        micTestAnalyser.fftSize = 256;
+
+        const levelBar = document.getElementById('micLevelBar');
+        const dataArray = new Uint8Array(micTestAnalyser.frequencyBinCount);
+
+        function updateLevel() {
+            if (!micTestAnalyser) return;
+
+            micTestAnalyser.getByteFrequencyData(dataArray);
+            const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+            const level = Math.min(100, (average / 128) * 100);
+
+            if (levelBar) {
+                levelBar.style.width = `${level}%`;
+                // 레벨에 따라 색상 변경
+                if (level > 70) {
+                    levelBar.style.background = '#f85149';
+                } else if (level > 40) {
+                    levelBar.style.background = '#3fb950';
+                } else {
+                    levelBar.style.background = '#58a6ff';
+                }
+            }
+
+            micTestAnimationId = requestAnimationFrame(updateLevel);
+        }
+
+        updateLevel();
+
+    } catch (err) {
+        console.error('마이크 테스트 실패:', err);
+    }
+}
+
+// 마이크 테스트 중지
+function stopMicTest() {
+    if (micTestAnimationId) {
+        cancelAnimationFrame(micTestAnimationId);
+        micTestAnimationId = null;
+    }
+    if (micTestStream) {
+        micTestStream.getTracks().forEach(track => track.stop());
+        micTestStream = null;
+    }
+    micTestAnalyser = null;
+}
+
+// 녹음 확인 모달 닫기
+function closeRecordingConfirmModal(event) {
+    if (event && event.target.id !== 'recordingConfirmModal') return;
+
+    stopMicTest();
+
+    const modal = document.getElementById('recordingConfirmModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// 확인 후 녹음 시작
+async function confirmAndStartRecording() {
+    const titleInput = document.getElementById('recordingTitleInput');
+    const title = titleInput?.value?.trim() || '';
+
+    if (!title) {
+        showToast('회의 제목을 입력해주세요.', 'warning');
+        titleInput?.focus();
+        return;
+    }
+
+    // 마이크 테스트 중지
+    stopMicTest();
+
+    // 모달 닫기
+    const modal = document.getElementById('recordingConfirmModal');
+    if (modal) {
+        modal.remove();
+    }
+
+    // 제목 설정
+    if (meetingTitleInput) {
+        meetingTitleInput.value = title;
+    }
+
+    // 녹음 시작 (선택된 마이크 사용)
+    await startRecording(selectedMicDeviceId);
+}
+
 // 녹음 시작
-async function startRecording() {
+async function startRecording(deviceId = null) {
     try {
         // 제목이 비어있으면 자동 생성
         if (meetingTitleInput && !meetingTitleInput.value.trim()) {
@@ -4249,19 +4499,28 @@ async function startRecording() {
             meetingTitleInput.value = `${dateStr} ${timeStr} 회의`;
         }
 
-        // 마이크 권한 요청 (권한 요청 후에야 장치 목록을 제대로 가져올 수 있음)
+        // 마이크 권한 요청 (선택된 장치 ID 사용)
+        const audioConstraints = {
+            echoCancellation: true,
+            noiseSuppression: true,
+            sampleRate: 44100
+        };
+
+        // 선택된 마이크가 있으면 해당 장치 사용
+        if (deviceId) {
+            audioConstraints.deviceId = { exact: deviceId };
+        }
+
         try {
             audioStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    sampleRate: 44100
-                }
+                audio: audioConstraints
             });
         } catch (err) {
             // 기본 설정 실패 시 최소 설정으로 재시도
-            console.log('기본 마이크 설정 실패, 최소 설정으로 재시도:', err.message);
-            audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            console.log('마이크 설정 실패, 최소 설정으로 재시도:', err.message);
+            audioStream = await navigator.mediaDevices.getUserMedia({
+                audio: deviceId ? { deviceId: { exact: deviceId } } : true
+            });
         }
 
         console.log('마이크 연결 성공');
