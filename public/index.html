@@ -1565,13 +1565,6 @@
                         </svg>
                         변경 내역
                     </button>
-                    <button class="panel-tab" data-bottom-tab="recording">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px; margin-right: 4px;">
-                            <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
-                            <path d="M19 10v2a7 7 0 01-14 0v-2"/>
-                        </svg>
-                        녹음
-                    </button>
                 </div>
                 <div class="bottom-panel-file-info" id="bottomPanelFileInfo"></div>
                 <button class="bottom-panel-close" id="closeBottomPanelBtn" title="패널 닫기">
@@ -1591,95 +1584,6 @@
                     </svg>
                     <p>변경 내역이 여기에 표시됩니다</p>
                     <span class="changes-hint">모니터링에서 "변경내역 보기" 버튼을 클릭하세요</span>
-                </div>
-            </div>
-            <!-- 녹음 탭 -->
-            <div class="bottom-panel-content" id="bottomRecording" data-bottom-content="recording">
-                <div class="recording-panel-container">
-                    <!-- 녹음 상태 및 타이머 -->
-                    <div class="recording-panel-status">
-                        <div class="recording-status" id="recordingStatus">
-                            <div class="status-indicator" id="statusIndicator"></div>
-                            <span id="statusText">대기 중</span>
-                        </div>
-                        <div class="recording-timer" id="recordingTimer">00:00:00</div>
-                    </div>
-
-                    <!-- 파형 시각화 -->
-                    <div class="recording-panel-visualizer">
-                        <canvas id="visualizerCanvas" width="400" height="50"></canvas>
-                    </div>
-
-                    <!-- 녹음 컨트롤 버튼 -->
-                    <div class="recording-panel-controls">
-                        <button id="startRecordingBtn" class="btn btn-record btn-start" title="녹음 시작">
-                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                                <circle cx="12" cy="12" r="8"/>
-                            </svg>
-                        </button>
-                        <button id="pauseRecordingBtn" class="btn btn-record btn-pause" disabled title="일시정지">
-                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                                <rect x="6" y="4" width="4" height="16"/>
-                                <rect x="14" y="4" width="4" height="16"/>
-                            </svg>
-                        </button>
-                        <button id="stopRecordingBtn" class="btn btn-record btn-stop" disabled title="녹음 중지">
-                            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                                <rect x="6" y="6" width="12" height="12"/>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- 녹음 설정 -->
-                    <div class="recording-panel-settings">
-                        <div class="setting-inline">
-                            <label>제목</label>
-                            <input type="text" id="meetingTitle" placeholder="회의 제목 입력">
-                        </div>
-                        <div class="setting-inline">
-                            <label>음질</label>
-                            <select id="audioQuality">
-                                <option value="low">낮음</option>
-                                <option value="medium" selected>보통</option>
-                                <option value="high">높음</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- 녹음 완료 후 액션 -->
-                    <div class="recording-panel-complete" id="recordingComplete" style="display: none;">
-                        <div class="complete-info">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; color: var(--success);">
-                                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-                                <polyline points="22 4 12 14.01 9 11.01"/>
-                            </svg>
-                            <span id="recordingInfo">녹음 완료</span>
-                        </div>
-                        <div class="complete-actions">
-                            <button id="generateMinutesBtn" class="btn btn-primary btn-sm">
-                                회의록 생성
-                            </button>
-                            <button id="downloadRecordingBtn" class="btn btn-secondary btn-sm">
-                                다운로드
-                            </button>
-                            <button id="discardRecordingBtn" class="btn btn-danger-outline btn-sm">
-                                삭제
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 파일 업로드 드래그 영역 -->
-                    <div class="recording-panel-upload" id="recordingPanelUpload">
-                        <div class="upload-drop-zone" id="uploadDropZone">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;">
-                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                                <polyline points="17 8 12 3 7 8"/>
-                                <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                            <span>파일 드래그 또는 클릭하여 업로드</span>
-                            <small>WAV, MP3, M4A 지원</small>
-                        </div>
-                    </div>
                 </div>
             </div>
         </aside>

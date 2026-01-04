@@ -323,6 +323,111 @@ body {
     color: white;
 }
 
+/* ============================================ */
+/* 사이드바 녹음 패널 */
+/* ============================================ */
+
+.sidebar-recording-panel {
+    padding: 0;
+}
+
+.sidebar-recording-ready {
+    /* 기본 대기 상태 */
+}
+
+.sidebar-recording-active {
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    margin: 4px 12px;
+}
+
+.sidebar-recording-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.sidebar-recording-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #f85149;
+    animation: recordingPulse 1s ease-in-out infinite;
+}
+
+@keyframes recordingPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.9); }
+}
+
+.sidebar-recording-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #f85149;
+}
+
+.sidebar-recording-timer {
+    font-size: 20px;
+    font-weight: 600;
+    font-family: 'SF Mono', Monaco, monospace;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.sidebar-recording-visualizer {
+    width: 100%;
+    height: 30px;
+    border-radius: 4px;
+    background: #21262d;
+    margin-bottom: 12px;
+}
+
+.sidebar-recording-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.sidebar-rec-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.sidebar-rec-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.sidebar-rec-btn.pause {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.sidebar-rec-btn.pause:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent-primary);
+}
+
+.sidebar-rec-btn.stop {
+    background: #f85149;
+    color: white;
+}
+
+.sidebar-rec-btn.stop:hover {
+    background: #da3633;
+}
+
 /* 사이드바 삭제 버튼 */
 .sidebar-remove-btn {
     opacity: 0;

@@ -2045,12 +2045,39 @@ function renderMeetingSidebar(container) {
                 <span>녹음</span>
             </div>
             <div class="sidebar-section-items">
-                <div class="sidebar-item" onclick="startRecording()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <circle cx="12" cy="12" r="3" fill="currentColor"/>
-                    </svg>
-                    <span class="sidebar-item-text">회의 녹음 시작</span>
+                <!-- 대기 상태 -->
+                <div class="sidebar-recording-panel" id="sidebarRecordingPanel">
+                    <div class="sidebar-recording-ready" id="sidebarRecordingReady">
+                        <div class="sidebar-item" onclick="startRecording()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                            </svg>
+                            <span class="sidebar-item-text">회의 녹음 시작</span>
+                        </div>
+                    </div>
+                    <!-- 녹음 중 상태 -->
+                    <div class="sidebar-recording-active" id="sidebarRecordingActive" style="display: none;">
+                        <div class="sidebar-recording-status">
+                            <span class="sidebar-recording-indicator"></span>
+                            <span class="sidebar-recording-label">녹음 중</span>
+                        </div>
+                        <div class="sidebar-recording-timer" id="sidebarRecordingTimer">00:00:00</div>
+                        <canvas class="sidebar-recording-visualizer" id="sidebarVisualizer" width="200" height="30"></canvas>
+                        <div class="sidebar-recording-controls">
+                            <button class="sidebar-rec-btn pause" id="sidebarPauseBtn" onclick="togglePauseRecording()" title="일시정지">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                    <rect x="6" y="4" width="4" height="16"/>
+                                    <rect x="14" y="4" width="4" height="16"/>
+                                </svg>
+                            </button>
+                            <button class="sidebar-rec-btn stop" id="sidebarStopBtn" onclick="stopRecording()" title="중지">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                                    <rect x="6" y="6" width="12" height="12" rx="1"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2069,25 +2096,6 @@ function renderMeetingSidebar(container) {
                         <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
                     <span class="sidebar-item-text">녹음 파일 업로드</span>
-                </div>
-            </div>
-        </div>
-        <div class="sidebar-section">
-            <div class="sidebar-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 9l6 6 6-6"/>
-                </svg>
-                <span>음성인식 설정</span>
-            </div>
-            <div class="sidebar-section-items" id="sidebarSttSettings">
-                <div class="sidebar-item" style="flex-direction: column; align-items: flex-start; padding: 8px 12px 8px 24px;">
-                    <label style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">언어</label>
-                    <select id="sidebarSttLang" class="sidebar-select" onchange="updateSttLanguage(this.value)">
-                        <option value="ko">한국어</option>
-                        <option value="en">English</option>
-                        <option value="ja">日本語</option>
-                        <option value="zh">中文</option>
-                    </select>
                 </div>
             </div>
         </div>
@@ -4283,30 +4291,25 @@ async function startRecording() {
 
         mediaRecorder.onstop = async () => {
             const webmBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const title = meetingTitleInput?.value || '회의녹음';
 
-            // WebM을 WAV로 변환하여 저장
+            // WebM을 WAV로 변환하여 저장 (WAV만 지원)
             try {
-                const title = meetingTitleInput?.value || '회의녹음';
                 console.log('WAV 변환 시작...');
                 recordedBlob = await convertToWav(webmBlob);
-                console.log('WAV 변환 완료');
+                console.log('WAV 변환 완료, 크기:', (recordedBlob.size / 1024).toFixed(1), 'KB');
 
                 const saved = await saveRecordingToServer(recordedBlob, title);
                 if (saved) {
                     console.log('녹음 파일 서버 저장 완료:', saved.filename);
+                    showToast('녹음이 WAV 파일로 저장되었습니다.', 'success');
                     loadRecordings();
+                } else {
+                    showToast('녹음 파일 저장에 실패했습니다.', 'error');
                 }
             } catch (e) {
                 console.error('WAV 변환/저장 실패:', e);
-                // 변환 실패 시 원본 webm으로 저장 시도
-                recordedBlob = webmBlob;
-                try {
-                    const title = meetingTitleInput?.value || '회의녹음';
-                    await saveRecordingToServer(recordedBlob, title, true);
-                    loadRecordings();
-                } catch (e2) {
-                    console.error('원본 저장도 실패:', e2);
-                }
+                showToast('WAV 변환에 실패했습니다: ' + e.message, 'error');
             }
 
             showRecordingComplete();
@@ -4390,27 +4393,44 @@ function stopRecording() {
 
 // UI 상태 업데이트
 function updateRecordingUI(state) {
-    if (!statusIndicator || !statusText) return;
-
-    statusIndicator.className = 'status-indicator ' + state;
+    // 좌측 사이드바 패널 요소들
+    const sidebarReady = document.getElementById('sidebarRecordingReady');
+    const sidebarActive = document.getElementById('sidebarRecordingActive');
+    const sidebarLabel = document.querySelector('.sidebar-recording-label');
+    const sidebarPauseBtn = document.getElementById('sidebarPauseBtn');
 
     switch (state) {
         case 'recording':
-            statusText.textContent = '녹음 중';
-            if (startRecordingBtn) startRecordingBtn.disabled = true;
-            if (pauseRecordingBtn) pauseRecordingBtn.disabled = false;
-            if (stopRecordingBtn) stopRecordingBtn.disabled = false;
-            if (recordingCard) recordingCard.classList.add('is-recording');
+            // 좌측 사이드바 UI
+            if (sidebarReady) sidebarReady.style.display = 'none';
+            if (sidebarActive) sidebarActive.style.display = 'block';
+            if (sidebarLabel) sidebarLabel.textContent = '녹음 중';
+            if (sidebarPauseBtn) {
+                sidebarPauseBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                        <rect x="6" y="4" width="4" height="16"/>
+                        <rect x="14" y="4" width="4" height="16"/>
+                    </svg>
+                `;
+                sidebarPauseBtn.title = '일시정지';
+            }
             break;
         case 'paused':
-            statusText.textContent = '일시정지';
+            // 좌측 사이드바 UI
+            if (sidebarLabel) sidebarLabel.textContent = '일시정지';
+            if (sidebarPauseBtn) {
+                sidebarPauseBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                        <polygon points="5,3 19,12 5,21"/>
+                    </svg>
+                `;
+                sidebarPauseBtn.title = '재개';
+            }
             break;
         case 'ready':
-            statusText.textContent = '대기 중';
-            if (startRecordingBtn) startRecordingBtn.disabled = false;
-            if (pauseRecordingBtn) pauseRecordingBtn.disabled = true;
-            if (stopRecordingBtn) stopRecordingBtn.disabled = true;
-            if (recordingCard) recordingCard.classList.remove('is-recording');
+            // 좌측 사이드바 UI
+            if (sidebarReady) sidebarReady.style.display = 'block';
+            if (sidebarActive) sidebarActive.style.display = 'none';
             break;
     }
 }
@@ -4420,8 +4440,12 @@ function startTimer() {
     timerInterval = setInterval(() => {
         if (!isPaused && recordingStartTime) {
             const elapsed = Date.now() - recordingStartTime;
-            if (recordingTimer) {
-                recordingTimer.textContent = formatTime(elapsed);
+            const timeStr = formatTime(elapsed);
+
+            // 좌측 사이드바 타이머
+            const sidebarTimer = document.getElementById('sidebarRecordingTimer');
+            if (sidebarTimer) {
+                sidebarTimer.textContent = timeStr;
             }
         }
     }, 1000);
@@ -4437,9 +4461,13 @@ function formatTime(ms) {
 
 // 오디오 시각화
 function startVisualizer() {
-    if (!visualizerCanvas || !analyser) return;
+    if (!analyser) return;
 
-    const canvasCtx = visualizerCanvas.getContext('2d');
+    // 좌측 사이드바 캔버스
+    const sidebarCanvas = document.getElementById('sidebarVisualizer');
+    if (!sidebarCanvas) return;
+
+    const canvasCtx = sidebarCanvas.getContext('2d');
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
@@ -4448,22 +4476,23 @@ function startVisualizer() {
 
         analyser.getByteFrequencyData(dataArray);
 
+        // 좌측 사이드바 캔버스 그리기
         canvasCtx.fillStyle = '#21262d';
-        canvasCtx.fillRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
+        canvasCtx.fillRect(0, 0, sidebarCanvas.width, sidebarCanvas.height);
 
-        const barWidth = (visualizerCanvas.width / bufferLength) * 2.5;
+        const barWidth = (sidebarCanvas.width / bufferLength) * 2.5;
         let x = 0;
 
         for (let i = 0; i < bufferLength; i++) {
-            const barHeight = (dataArray[i] / 255) * visualizerCanvas.height;
+            const barHeight = (dataArray[i] / 255) * sidebarCanvas.height;
 
             // 그라데이션 색상
-            const gradient = canvasCtx.createLinearGradient(0, visualizerCanvas.height, 0, 0);
+            const gradient = canvasCtx.createLinearGradient(0, sidebarCanvas.height, 0, 0);
             gradient.addColorStop(0, '#f85149');
             gradient.addColorStop(1, '#00d4aa');
 
             canvasCtx.fillStyle = gradient;
-            canvasCtx.fillRect(x, visualizerCanvas.height - barHeight, barWidth, barHeight);
+            canvasCtx.fillRect(x, sidebarCanvas.height - barHeight, barWidth, barHeight);
 
             x += barWidth + 1;
         }
@@ -4508,17 +4537,16 @@ function resetRecording() {
     updateRecordingUI('ready');
 }
 
-// 녹음 파일을 서버에 저장
-async function saveRecordingToServer(blob, title, isWebm = false) {
+// 녹음 파일을 서버에 저장 (WAV 전용)
+async function saveRecordingToServer(blob, title) {
     try {
         const formData = new FormData();
-        const ext = isWebm ? 'webm' : 'wav';
         // 제목 정리: 파일시스템 금지 문자만 제거, 한글/공백 등은 유지
         const cleanTitle = (title || '').trim()
             .replace(/[\\/:*?"<>|]/g, '')  // 파일시스템 금지 문자 제거
             .replace(/\s+/g, ' ')           // 연속 공백 하나로
             .trim() || '회의녹음';
-        const filename = `${cleanTitle}.${ext}`;
+        const filename = `${cleanTitle}.wav`;
         formData.append('file', blob, filename);
 
         const res = await fetch('/api/recordings', {
@@ -4538,43 +4566,26 @@ async function saveRecordingToServer(blob, title, isWebm = false) {
 }
 
 // 녹음 파일 다운로드 (WAV)
-async function downloadRecording() {
-    if (!recordedBlob) return;
-
-    const title = meetingTitleInput?.value || '회의녹음';
-    const date = new Date().toISOString().slice(0, 10);
-    const isWav = recordedBlob.type === 'audio/wav' || recordedBlob.type === 'audio/wave';
-
-    // 이미 WAV인 경우 바로 다운로드
-    if (isWav) {
-        const filename = `${title}_${date}.wav`;
-        const url = URL.createObjectURL(recordedBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+function downloadRecording() {
+    if (!recordedBlob) {
+        showToast('다운로드할 녹음 파일이 없습니다.', 'error');
         return;
     }
 
-    // WebM인 경우 WAV로 변환 시도
-    try {
-        const wavBlob = await convertWebmToWav(recordedBlob);
-        const filename = `${title}_${date}.wav`;
-        const url = URL.createObjectURL(wavBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    } catch (error) {
-        console.error('WAV 변환 실패:', error);
-        alert('WAV 변환에 실패했습니다.');
-    }
+    const title = meetingTitleInput?.value || '회의녹음';
+    const date = new Date().toISOString().slice(0, 10);
+    const filename = `${title}_${date}.wav`;
+
+    const url = URL.createObjectURL(recordedBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('WAV 파일 다운로드 시작', 'success');
 }
 
 // WebM을 WAV로 변환 (브라우저에서)
