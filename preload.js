@@ -16,6 +16,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     maximizeWindow: () => ipcRenderer.invoke('window-maximize'),
     closeWindow: () => ipcRenderer.invoke('window-close'),
 
+    // 쉘 작업 (Finder/탐색기에서 열기, 클립보드 복사)
+    showItemInFolder: (path) => ipcRenderer.invoke('shell-show-item-in-folder', path),
+    copyToClipboard: (text) => ipcRenderer.invoke('clipboard-write-text', text),
+
     // Electron 환경 확인
     isElectron: true
 });

@@ -299,6 +299,9 @@ function updateSidebar(section) {
 
 // 모니터링 사이드바 (VSCode Explorer 스타일 - 폴더 그룹 통합)
 function renderMonitorSidebar(container) {
+    // 사이드바 컨테이너에 flex 레이아웃 클래스 추가
+    container.classList.add('monitor-sidebar-container');
+
     container.innerHTML = `
         <!-- VSCode 스타일 Explorer 섹션 -->
         <div class="vscode-explorer">
@@ -339,20 +342,19 @@ function renderMonitorSidebar(container) {
                 </div>
             </div>
         </div>
-        <!-- 하단 상태바: 선택한 항목 경로 표시 -->
+        <!-- 하단 상태바 (경로 표시) -->
         <div class="path-status-bar" id="pathStatusBar">
-            <div class="path-status-icon">
+            <span class="path-status-icon">
                 <svg viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M8 4a.5.5 0 0 1 .5.5V6H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V7H6a.5.5 0 0 1 0-1h1.5V4.5A.5.5 0 0 1 8 4z"/>
-                    <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2z"/>
+                    <path d="M14.5 3H7.71l-.85-.85L6.51 2H1.5l-.5.5v11l.5.5h13l.5-.5v-10L14.5 3z"/>
                 </svg>
-            </div>
-            <div class="path-status-content">
+            </span>
+            <span class="path-status-content">
                 <span class="path-status-text">항목을 선택하세요</span>
-            </div>
+            </span>
             <button class="path-status-copy" id="pathStatusCopy" title="경로 복사" style="display: none;">
                 <svg viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2z"/>
+                    <path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6z"/>
                     <path d="M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/>
                 </svg>
             </button>
@@ -525,8 +527,7 @@ function loadFolderGroups() {
                              data-type="${isFile ? 'file' : 'folder'}"
                              onclick="selectGroupItem(this, '${escapedPath}')"
                              oncontextmenu="showItemContextMenu(event, '${group.id}', '${escapedPath}')"
-                             onmouseenter="showItemTooltip(event, '${escapedPath}')"
-                             onmouseleave="hideItemTooltip()">
+                             title="${escapeHtml(path)}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 ${isFile ?
                                     '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>' :
@@ -998,9 +999,23 @@ function removeFromFolderGroup(groupId, path) {
 }
 
 // 그룹 아이템 선택 시 동작
-function selectGroupItem(path) {
+function selectGroupItem(element, path) {
     // 해당 경로의 폴더/파일로 이동 또는 선택
     console.log('선택된 경로:', path);
+
+    // 이전 선택 해제
+    document.querySelectorAll('.folder-group-item.selected').forEach(item => {
+        item.classList.remove('selected');
+    });
+
+    // 현재 항목 선택
+    if (element) {
+        element.classList.add('selected');
+    }
+
+    // 상태바 업데이트
+    updatePathStatusBar(path, element);
+
     // 사이드바에서 해당 항목 찾아서 선택
     const treeItems = document.querySelectorAll('.tree-item');
     treeItems.forEach(item => {
@@ -1010,6 +1025,72 @@ function selectGroupItem(path) {
             item.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
+}
+
+// 상태바 경로 업데이트
+function updatePathStatusBar(path, element) {
+    const statusBar = document.getElementById('pathStatusBar');
+    const statusIcon = statusBar ? statusBar.querySelector('.path-status-icon') : null;
+    const statusContent = statusBar ? statusBar.querySelector('.path-status-content') : null;
+    const copyBtn = document.getElementById('pathStatusCopy');
+
+    if (!statusBar || !statusContent) return;
+
+    if (path) {
+        const isFile = element ? element.dataset.type === 'file' : (path.includes('.') && !path.endsWith('/'));
+        const fileName = getFileName(path);
+        const parentPath = getParentPath(path);
+
+        // 아이콘 업데이트
+        if (statusIcon) {
+            statusIcon.innerHTML = isFile ?
+                '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M13 4H9.5V0.5L13 4zM9 5V0H3v15h10V5H9z"/></svg>' :
+                '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M14.5 3H7.71l-.85-.85L6.51 2H1.5l-.5.5v11l.5.5h13l.5-.5v-10L14.5 3z"/></svg>';
+        }
+
+        // 경로 표시 업데이트
+        statusContent.innerHTML = `
+            <span class="path-status-text">
+                <span class="path-filename">${escapeHtml(fileName)}</span>
+                <span class="path-separator">in</span>
+                <span class="path-parent">${escapeHtml(parentPath)}</span>
+            </span>
+        `;
+        statusContent.title = path;
+
+        // 복사 버튼 표시 및 클릭 이벤트
+        if (copyBtn) {
+            copyBtn.style.display = 'flex';
+            copyBtn.onclick = () => copyPathToClipboard(path);
+        }
+
+        statusBar.classList.add('has-selection');
+    } else {
+        // 아이콘 초기화
+        if (statusIcon) {
+            statusIcon.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M14.5 3H7.71l-.85-.85L6.51 2H1.5l-.5.5v11l.5.5h13l.5-.5v-10L14.5 3z"/></svg>';
+        }
+
+        // 기본 텍스트
+        statusContent.innerHTML = '<span class="path-status-text">항목을 선택하세요</span>';
+        statusContent.title = '';
+
+        // 복사 버튼 숨기기
+        if (copyBtn) {
+            copyBtn.style.display = 'none';
+        }
+
+        statusBar.classList.remove('has-selection');
+    }
+}
+
+// 부모 경로 추출
+function getParentPath(path) {
+    if (!path) return '';
+    const normalized = path.replace(/\\/g, '/');
+    const parts = normalized.split('/').filter(p => p);
+    parts.pop(); // 마지막 요소(파일/폴더명) 제거
+    return parts.join('/') || '/';
 }
 
 // 파일명 추출
@@ -1084,13 +1165,16 @@ function showItemContextMenu(event, groupId, path) {
     const fileName = getFileName(path);
     const isFile = path.includes('.') && !path.endsWith('/');
 
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const explorerName = isMac ? 'Finder에서 열기' : '탐색기에서 열기';
+
     const menu = document.createElement('div');
     menu.id = 'contextMenu';
     menu.className = 'context-menu';
     menu.innerHTML = `
         <div class="context-menu-item" onclick="hideContextMenu(); openInExplorer('${escapeHtml(path).replace(/'/g, "\\'")}')">
             <svg viewBox="0 0 16 16" fill="currentColor"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/></svg>
-            <span>탐색기에서 열기</span>
+            <span>${explorerName}</span>
         </div>
         <div class="context-menu-item" onclick="hideContextMenu(); copyPathToClipboard('${escapeHtml(path).replace(/'/g, "\\'")}')">
             <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6z"/><path d="M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/></svg>
@@ -1155,10 +1239,18 @@ function duplicateFolderGroup(groupId) {
     showToast('그룹이 복제되었습니다.', 'success');
 }
 
-// 탐색기에서 열기
-function openInExplorer(path) {
-    if (window.electronAPI && window.electronAPI.openInExplorer) {
-        window.electronAPI.openInExplorer(path);
+// Finder/탐색기에서 열기
+async function openInExplorer(path) {
+    if (window.electronAPI && window.electronAPI.showItemInFolder) {
+        try {
+            const result = await window.electronAPI.showItemInFolder(path);
+            if (!result.success) {
+                showToast('폴더 열기에 실패했습니다: ' + result.error, 'error');
+            }
+        } catch (err) {
+            console.error('Finder/탐색기 열기 실패:', err);
+            showToast('폴더 열기에 실패했습니다.', 'error');
+        }
     } else {
         showToast('이 기능은 데스크톱 앱에서만 사용할 수 있습니다.', 'error');
     }
@@ -1167,8 +1259,19 @@ function openInExplorer(path) {
 // 경로 클립보드에 복사
 async function copyPathToClipboard(path) {
     try {
-        await navigator.clipboard.writeText(path);
-        showToast('경로가 복사되었습니다.', 'success');
+        // Electron 환경에서는 Electron API 사용
+        if (window.electronAPI && window.electronAPI.copyToClipboard) {
+            const result = await window.electronAPI.copyToClipboard(path);
+            if (result.success) {
+                showToast('경로가 복사되었습니다.', 'success');
+            } else {
+                showToast('복사에 실패했습니다: ' + result.error, 'error');
+            }
+        } else {
+            // 웹 브라우저 환경에서는 navigator.clipboard 사용
+            await navigator.clipboard.writeText(path);
+            showToast('경로가 복사되었습니다.', 'success');
+        }
     } catch (err) {
         console.error('클립보드 복사 실패:', err);
         showToast('복사에 실패했습니다.', 'error');
@@ -1589,19 +1692,6 @@ async function loadFolderDetailContent(folderPath) {
                 <p>정보를 불러올 수 없습니다</p>
             </div>
         `;
-    }
-}
-
-// 탐색기에서 열기
-async function openInExplorer(folderPath) {
-    try {
-        if (window.electronAPI && window.electronAPI.openPath) {
-            await window.electronAPI.openPath(folderPath);
-        } else {
-            alert('이 기능은 데스크톱 앱에서만 사용 가능합니다.');
-        }
-    } catch (err) {
-        console.error('탐색기 열기 실패:', err);
     }
 }
 

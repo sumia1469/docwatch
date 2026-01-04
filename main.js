@@ -1,5 +1,5 @@
 // Electron 메인 프로세스
-const { app, BrowserWindow, Tray, Menu, nativeImage, dialog, ipcMain, systemPreferences, session } = require('electron');
+const { app, BrowserWindow, Tray, Menu, nativeImage, dialog, ipcMain, systemPreferences, session, shell, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -871,6 +871,28 @@ ipcMain.handle('window-maximize', () => {
 
 ipcMain.handle('window-close', () => {
     if (mainWindow) mainWindow.close();
+});
+
+// 쉘 작업: Finder/탐색기에서 항목 표시
+ipcMain.handle('shell-show-item-in-folder', (event, filePath) => {
+    try {
+        shell.showItemInFolder(filePath);
+        return { success: true };
+    } catch (err) {
+        console.error('[Shell] showItemInFolder 실패:', err);
+        return { success: false, error: err.message };
+    }
+});
+
+// 클립보드에 텍스트 복사
+ipcMain.handle('clipboard-write-text', (event, text) => {
+    try {
+        clipboard.writeText(text);
+        return { success: true };
+    } catch (err) {
+        console.error('[Clipboard] writeText 실패:', err);
+        return { success: false, error: err.message };
+    }
 });
 
 // ========================================
